@@ -13,35 +13,97 @@ public class Main {
 
         int waterAmount = fill(heights, 0, heights.length - 1);
         System.out.println("The amount of water is: " + waterAmount);
+        printWaterFilledColumns(heights);
+    }
+
+    private static int findMaxIndex(int[] heights, int leftIndex, int rightIndex) {
+        int maxIndex = leftIndex;
+        for (int i = leftIndex + 1; i <= rightIndex; i++) {
+            if (heights[i] > heights[maxIndex]) {
+                maxIndex = i;
+            }
+        }
+        return maxIndex;
     }
 
     public static int fill(int[] heights, int leftIndex, int rightIndex) {
         if (leftIndex >= rightIndex) {
             return 0; // base case
         }
-
+        // Find the tallest column index between leftIndex and rightIndex
+        int maxIndex = findMaxIndex(heights, leftIndex, rightIndex);
         int waterAmount = 0;
-        int smallerHeight = Math.min(heights[leftIndex], heights[rightIndex]);
-        int biggerHeightIndex = (heights[leftIndex] > heights[rightIndex]) ? leftIndex : rightIndex;
+        int leftMaxHeight = 0;
+        int rightMaxHeight = 0;
 
-        // iterate over inner columns
-        for (int i = leftIndex + 1; i < rightIndex; i++) {
-            waterAmount += Math.max(0, smallerHeight - heights[i]); // if smaller height is longer, fill; 0 otherwise
-            if (heights[i] > heights[biggerHeightIndex]) {
-                biggerHeightIndex = i; // Update biggerHeightIndex within the loop
-            }
+        for (int i = leftIndex; i < maxIndex; i++) {
+            leftMaxHeight = Math.max(leftMaxHeight, heights[i]);
+            waterAmount += Math.max(0, leftMaxHeight - heights[i]);
         }
 
-        // recursion with updated boundaries
-        if (heights[leftIndex] < heights[rightIndex]) {
-            // Move left boundary towards the center
-            waterAmount += fill(heights, leftIndex, biggerHeightIndex);
-        } else {
-            // Move right boundary towards the center
-            waterAmount += fill(heights, biggerHeightIndex, rightIndex);
+        for (int i = rightIndex; i > maxIndex; i--) {
+            rightMaxHeight = Math.max(rightMaxHeight, heights[i]);
+            waterAmount += Math.max(0, rightMaxHeight - heights[i]);
         }
+
+        // Recurse on left and right segments
+        waterAmount += fill(heights, leftIndex, maxIndex - 1);
+        waterAmount += fill(heights, maxIndex + 1, rightIndex);
+
+        // System.out.println("Max index: " + maxIndex);
+        // System.out.println("Water amount: " + waterAmount + " leftIndex: " + leftIndex + " rightIndex: " + rightIndex);
 
         return waterAmount;
     }
 
+
+    public static void printWaterFilledColumns(int[] heights) {
+        int maxHeight = getMaxHeight(heights);
+        int[][] waterMatrix = new int[maxHeight][heights.length];
+
+        for (int i = 0; i < heights.length; i++) {
+            for (int j = 0; j < heights[i]; j++) {
+                waterMatrix[maxHeight - j - 1][i] = 1;
+            }
+        }
+
+        fillWaterMatrix(waterMatrix);
+
+        for (int i = 0; i < maxHeight; i++) {
+            for (int j = 0; j < heights.length; j++) {
+                System.out.print(waterMatrix[i][j] == 1 ? "|" : waterMatrix[i][j] == 2 ? "w" : " ");
+            }
+            System.out.println();
+        }
+        System.out.println("-".repeat(heights.length));
+    }
+
+    private static int getMaxHeight(int[] heights) {
+        int max = 0;
+        for (int height : heights) {
+            if (height > max) {
+                max = height;
+            }
+        }
+        return max;
+    }
+
+    private static void fillWaterMatrix(int[][] waterMatrix) {
+        for (int i = 0; i < waterMatrix.length; i++) {
+            int start = -1, end = -1;
+            for (int j = 0; j < waterMatrix[i].length; j++) {
+                if (waterMatrix[i][j] == 1) {
+                    if (start == -1) {
+                        start = j;
+                    } else {
+                        end = j;
+                        for (int k = start + 1; k < end; k++) {
+                            waterMatrix[i][k] = 2; // Fill with water
+                        }
+                        start = j;
+                    }
+                }
+            }
+        }
+    }
 }
